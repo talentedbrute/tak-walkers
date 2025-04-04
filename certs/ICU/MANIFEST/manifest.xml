@@ -1,0 +1,11 @@
+MissionPackageManifest version="2">
+  <Configuration>
+    <Parameter name="uid" value=""/>
+    <Parameter name="name" value="ICU"/>
+  </Configuration>
+  <Contents>
+    <Content ignore="false" zipEntry="truststore-RippleTwo.p12"/>
+    <Content ignore="false" zipEntry="ICU.p12"/>
+    <Content ignore="false" zipEntry="secure.pref"/>
+  </Contents>
+</MissionPackageManifest>

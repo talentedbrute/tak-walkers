@@ -1,0 +1,10 @@
+<MissionPackageManifest version="2">
+  <Configuration>
+    <Parameter name="uid" value=""/>
+    <Parameter name="name" value="##username##"/>
+  </Configuration>
+  <Contents>
+    <Content ignore="false" zipEntry="truststore-intermediate-CA.p12"/>
+    <Content ignore="false" zipEntry="secure.pref"/>
+  </Contents>
+</MissionPackageManifest>

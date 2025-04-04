@@ -14,7 +14,5 @@
 # language governing permissions and limitations under the License.
 #----------------------------------------------------------------------------------------
 
-#./walkers.py --type=a-h-G-U-C-A --pos1_lat=42.9898 --pos1_lon=-71.0524 --pos2_lat=43.0950 --pos2_lon=-70.9437 --pos3_lat=42.1211 --pos3_lon=-71.19898 &
-./walkers.py --num_walkers=3 --type=a-h-G-U-C-A --pos1_lat=49.418037 --pos1_lon=11.124194 --pos2_lat=49.429393 --pos2_lon=11.128758 --pos3_lat=49.418788 --pos3_lon=11.158387  --callsign=ARMOR
+./walkers.py --num_walkers=3 --type=a-f-G-U-C-I --pos1_lat=49.418993 --pos1_lon=11.124850 --pos2_lat=49.410112 --pos2_lon=11.113317 --pos3_lat=49.41026 --pos3_lon=11.101770  --callsign=TEAM6
 
-#./walkers.py --num_walkers=2 --type=a-h-G-U-C-A --pos1_lat=42.5145 --pos1_lon=-71.2282 --pos2_lat=41.9309 --pos2_lon=-71.0058 

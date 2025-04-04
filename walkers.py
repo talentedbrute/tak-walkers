@@ -22,6 +22,8 @@ import argparse
 from datetime import datetime, timedelta
 from pyproj import Geod
 
+callsign = "CALLSIGN"
+altitude = 0
 num_walkers = 3
 # walker_type = "a-h-G-U-C-A"  # ARMOR
 walker_type = "a-f-S-X-M-C"  # CARGO SHIP
@@ -46,11 +48,11 @@ MCAST_GRP = '239.2.3.1'
 MCAST_PORT = 6969
 
 ## For Remote
-hostname = "tak.adeptus-cs.com"
+hostname = "192.168.1.111"
 port = 8089
 serverPEM = "certs/server.pem"
 clientPEM = "certs/client.pem"
-serverCN = "tak.adeptuscybersolutions.com"
+serverCN = "takserver"
 
 # regarding socket.IP_MULTICAST_TTL
 # ---------------------------------
@@ -64,24 +66,24 @@ context.load_verify_locations(serverPEM)
 context.load_cert_chain(certfile=clientPEM)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sockConnection = context.wrap_socket(sock, server_hostname=serverCN)
-sockConnection.connect((hostname, port))
+# sockConnection = context.wrap_socket(sock, server_hostname=serverCN)
+# sockConnection.connect((hostname, port))
 
 ### LOCAL
-# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-# sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 
 def sendCoT(cotMessage):
     # For Python 3, change next line to 'sock.sendto(b"robot", ...' to avoid the
     # "bytes-like object is required" msg (https://stackoverflow.com/a/42612820)
-    # LOCAL 
-    # sock.sendto(cotMessage.encode(), (MCAST_GRP, MCAST_PORT))
     try:
-        sockConnection.send(cotMessage.encode())
+        # LOCAL 
+        sock.sendto(cotMessage.encode(), (MCAST_GRP, MCAST_PORT))
+        # sockConnection.send(cotMessage.encode())
     except Exception as ex:
         print("Error: %s" % format(ex))
 
-def startWalkers(uuids, walker_points):
+def startWalkers(uuids, callsigns, walker_points, altitude):
     for k in range(len(walker_points[0])):
         for w in range(num_walkers):
             print("Points for walker %d: %.8f:%.9f" % (w, walker_points[w][k][latitude], walker_points[w][k][longitude]))
@@ -90,7 +92,7 @@ def startWalkers(uuids, walker_points):
             startTime = now.strftime("%FT%T.%f")
             nowTime = now.strftime("%FT%T.%f")
             staleTime = (now + timedelta(minutes=1)).strftime("%FT%T.%f")
-            xml = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?><event version='2.0' uid='%s' type='%s' how='m-g' time='%sZ' start='%sZ' stale='%sZ'><detail></detail><point lat='%.8f' lon='%.8f' hae='0' ce='1' le='1'/></event>" % (uuids[w], walker_type, nowTime, startTime, staleTime, walker_points[w][k][latitude], walker_points[w][k][longitude])
+            xml = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?><event version='2.0' uid='%s' type='%s' how='m-g' time='%sZ' start='%sZ' stale='%sZ'><detail><contact callsign='%s'/></detail><point lat='%.8f' lon='%.8f' hae='%.2f' ce='1' le='1'/></event>" % (uuids[w], walker_type, nowTime, startTime, staleTime, callsigns[w], walker_points[w][k][latitude], walker_points[w][k][longitude], altitude)
             print("Sending XML: %s" % xml)
             sendCoT(xml)
         time.sleep(1)
@@ -98,13 +100,17 @@ def startWalkers(uuids, walker_points):
 def main():
     ## UUIDS for the walkers
     uuids = []
+    callsigns = []
     for k in range(num_walkers):
         uuids.append(str(uuid.uuid4()))
+        callsigns.append("%s-%d" % (callsign, (k+1)))
 
     geoid = Geod(ellps="WGS84")
 
     walker_points = []
-    if num_walkers == 2:
+    if num_walkers == 1:
+        walker_points.append(geoid.npts(lon1, lat1, lon2, lat2, num_points) + geoid.npts(lon2, lat2, lon1, lat1, num_points))
+    elif num_walkers == 2:
         walker_points.append(geoid.npts(lon1, lat1, lon2, lat2, num_points) + geoid.npts(lon2, lat2, lon1, lat1, num_points))
         walker_points.append(geoid.npts(lon2, lat2, lon1, lat1, num_points) + geoid.npts(lon1, lat1, lon2, lat2, num_points))
     else:
@@ -113,7 +119,7 @@ def main():
         walker_points.append(geoid.npts(lon3, lat3, lon1, lat1, num_points) + geoid.npts(lon1, lat1, lon2, lat2, num_points) + geoid.npts(lon2, lat2, lon3, lat3, num_points))
 
     while True:
-        startWalkers(uuids, walker_points)
+        startWalkers(uuids, callsigns, walker_points, altitude)
 
 def usage():
     print("usage: walkers.py ")
@@ -123,12 +129,14 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(prog="walkers.py", description="Program generates requested number of walkers for ATAK")
         parser.add_argument('--num_walkers', nargs='?', help='Number of Walkers')
         parser.add_argument('--type', nargs='?', help='CoT Type')
+        parser.add_argument('--callsign', nargs='?', help='Callsign')
         parser.add_argument('--pos1_lat', nargs='?', help='Position 1 Latitude')
         parser.add_argument('--pos1_lon', nargs='?', help='Position 1 Longitude')
         parser.add_argument('--pos2_lat', nargs='?', help='Position 2 Latitude')
         parser.add_argument('--pos2_lon', nargs='?', help='Position 2 Longitude')
         parser.add_argument('--pos3_lat', nargs='?', help='Position 3 Latitude')
         parser.add_argument('--pos3_lon', nargs='?', help='Position 3 Longitude')
+        parser.add_argument('--altitude', nargs='?', help='Altitude')
 
         args = parser.parse_args()
 
@@ -149,6 +157,12 @@ if __name__ == "__main__":
     
         if args.type:
             walker_type = args.type
+
+        if args.callsign:
+            callsign = args.callsign
+
+        if args.altitude:
+            altitude = int(args.altitude)
 
         main()
 
